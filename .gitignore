@@ -1,0 +1,25 @@
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+venv/
+env/
+.env
+
+# Build and Distribution Packages
+build/
+dist/
+*.egg-info/
+
+# IDE and Editor settings
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Exclude large data files (optional)
+# *.csv

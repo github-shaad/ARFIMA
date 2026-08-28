@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "arfima" # This is the pip install name. Check PyPI to ensure it is unique!
+version = "1.0.0"
+authors = [
+  { name="Shaad Hafeez", email="shaadhafeezofficial@gmail.com" },
+]
+description = "A custom AutoRegressive Fractionally Integrated Moving Average (ARFIMA) time series library."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy>=1.20.0",
+    "scipy>=1.7.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/github-shaad/arfima-python"
