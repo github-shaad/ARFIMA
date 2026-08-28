@@ -16,7 +16,7 @@ Where:
 
 ## Key Features
 
-* **Fast Fractional Differencing:** Uses Fast Fourier Transform (FFT) for fractional integration.
+* **Fast Fractional Differencing:** Uses Fast Fourier Transform (FFT) for fractional integration and differencing.
 * **Automatic Grid Search:** Automatically finds the optimal lag structure using information criteria (AIC, BIC, HQIC, or AICc).
 * **Statistical Inference:** Calculates the inverse Hessian matrix to provide standard errors, t-statistics, and exact p-values.
 * **Forecasting:** Built-in methods for both in-sample historical reconstruction and out-of-sample predictions.
