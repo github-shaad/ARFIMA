@@ -25,7 +25,7 @@ Where:
 
 ```bash
 pip install arfima
-
+```
 ## Changelog
 
 * **v1.0.2**: Minor bug fixes and docstring improvements.
