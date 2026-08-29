@@ -3,18 +3,11 @@ from scipy import signal
 from scipy.optimize import minimize
 import scipy.stats as stats
 from numpy.typing import NDArray
+
+
 """
 AutoRegressive Fractionally Integrated Moving Average Time Series Library
 """
-
-
-class _TimeSeries:
-    """
-    Wrapper for a numpy array as a Time Series. 
-    """
-    def __init__(self, data:NDArray[np.float64]):
-        self.values = np.array(data, dtype=float)
-        self.length = len(self.values)
 
 
 class ARFIMA:
@@ -31,14 +24,14 @@ class ARFIMA:
         self.d : float = 0
         self.ar_coeffs = []
         self.ma_coeffs = []
-
+        self.in_sample : NDArray[np.float64] = np.array([], dtype=np.float64)
         self.is_fitted = False
 
     def __repr__(self):
         return f"ARFIMA(p={self.p}, d={self.d}, q={self.q})"
 
-    def fit(self, time_series:_TimeSeries, p_list:list[int], q_list:list[int], method:str="L-BFGS-B",
-            criterion:str='aic'):
+    def fit(self, time_series:NDArray[np.float64], p_list:list[int], q_list:list[int], method:str="L-BFGS-B",
+            criterion:str='aic', returns=True):
         """        
         Fits the optimal ARFIMA structure using Maximum Likelihood Estimation (MLE) via a grid search.
                 
@@ -48,7 +41,7 @@ class ARFIMA:
 
                 Parameters
                 ----------
-                time_series : _TimeSeries
+                time_series : NDArray
                     The 1D time series data object to fit.
                 p_list : list[int]
                     A list of autoregressive (AR) lag orders to test (e.g., [0, 1, 2]).
@@ -69,10 +62,10 @@ class ARFIMA:
                     * "hqic" : Hannan-Quinn Information Criterion
                     * "aicc" : Corrected AIC 
         """
-        raw_data = time_series.values
+        self.in_sample = time_series
         best_ic_score = np.inf
         best_params = None
-        n = len(raw_data)
+        n = len(time_series)
 
         ic_formulas = {
             'aic': lambda n, k, neg_ll: 2 * k + 2 * neg_ll,
@@ -94,7 +87,7 @@ class ARFIMA:
 
                 res = minimize(fun=_score_function,
                                x0=initial_guess,
-                               args=(raw_data, p),
+                               args=(time_series, p),
                                method=method,
                                bounds=bounds)
 
@@ -112,15 +105,15 @@ class ARFIMA:
                     print(f"Failed to fit ARFIMA({p}, d, {q}): {res.message}") 
 
         if best_params is not None:
-                    final_initial_guesses = [0.1] + [0.0] * self.p + [0.0] * self.q
-                    final_bnds = [(-0.49, 0.49)] + [(-0.99, 0.99)] * (self.p + self.q)
+
+                    final_bounds = [(-0.49, 0.49)] + [(-0.99, 0.99)] * (self.p + self.q)
                     
                     final_result = minimize(
                         fun=_score_function, 
-                        x0=final_initial_guesses, 
-                        args=(raw_data, self.p), 
+                        x0=best_params, 
+                        args=(time_series, self.p), 
                         method='L-BFGS-B', 
-                        bounds=final_bnds
+                        bounds=final_bounds
                     )
 
                     best_params = final_result.x
@@ -136,8 +129,10 @@ class ARFIMA:
                     self.t_stats = best_params / self.std_errors 
                     self.p_values = 2 * stats.norm.sf(np.abs(self.t_stats))
                     print(f"\nFinal Fit Complete: ARFIMA({self.p}, {self.d:.4f}, {self.q})")
-                    
-    def summary(self):
+        if returns:
+            return self
+             
+    def summary(self, returns:bool=True):
         """
         Prints a formatted statistical regression table for the fitted model.
         
@@ -184,7 +179,10 @@ class ARFIMA:
             
         print("="*50 + "\n")
 
-    def predict(self, time_series:_TimeSeries, steps=0):
+        if returns:
+            return self
+        
+    def predict(self, steps:int=0):
         """
         Forecasts future values of the time series out-of-sample.
         
@@ -194,8 +192,6 @@ class ARFIMA:
 
         Parameters
         ----------
-        time_series : _TimeSeries
-            The historical 1D time series data object used as the baseline for the forecast.
         steps : int, default=0
             The number of future time periods to forecast.
 
@@ -212,29 +208,24 @@ class ARFIMA:
         if not self.is_fitted:
             raise ValueError("ARFIMA not fitted yet")
 
-        y_history = _frac_diff(time_series, self.d)
+        y_history = _frac_diff(self.in_sample, self.d)
         w_history = _fast_residuals(y_history, self.ar_coeffs, self.ma_coeffs)
 
         w_future = np.zeros(steps)
         w_full = np.concatenate((w_history, w_future))
 
-        y_full = _fast_residuals(w_full, self.ma_coeffs, self.ar_coeffs)
-        integrated_series = _frac_diff(_TimeSeries(y_full), -self.d)
+        y_full = _arma_generate(w_full, self.ar_coeffs, self.ma_coeffs)
+        integrated_series = _frac_diff(y_full, -self.d)
 
         return integrated_series[-steps:]
     
-    def predict_in_sample(self, time_series):
+    def predict_in_sample(self):
         """
         Generates in-sample fitted values for the historical data.
         
         Reconstructs the model's historical fit by calculating the exact historical 
-        residuals (shocks) via linear filtering, and subtracting those residuals 
+        residuals via linear filtering, and subtracting those residuals 
         from the raw input data.
-
-        Parameters
-        ----------
-        time_series : _TimeSeries
-            The 1D time series data object that the model was trained on.
 
         Returns
         -------
@@ -249,28 +240,26 @@ class ARFIMA:
         if not self.is_fitted:
             raise ValueError("ARFIMA not fitted yet")
             
-        raw_data = time_series.values
         
         ar_poly = [1.0] + [-phi for phi in self.ar_coeffs]
         ma_poly = [1.0] + list(self.ma_coeffs)
         
-        y_history = _frac_diff(time_series, self.d)
+        y_history = _frac_diff(self.in_sample, self.d)
         
         w_history = np.asarray(signal.lfilter(ar_poly, ma_poly, y_history))
         
-        fitted_values = raw_data - w_history
+        fitted_values = self.in_sample - w_history
         
         return fitted_values
 
-def _score_function(params, raw_data, p):
-    n = len(raw_data)
+def _score_function(params:list[float], time_series:NDArray[np.float64], p:int):
+    n = len(time_series)
     
     d_guess = float(params[0])
     ar_coeffs = params[1 : p + 1]
     ma_coeffs = params[p + 1 :]
     
-    ts_obj = _TimeSeries(raw_data)
-    y_differenced = _frac_diff(ts_obj, d_guess)
+    y_differenced = _frac_diff(time_series, d_guess)
     
     residuals = _fast_residuals(y_differenced, ar_coeffs, ma_coeffs)
     
@@ -287,9 +276,9 @@ def _score_function(params, raw_data, p):
         
     return neg_ll
 
-def _fast_residuals(diff_data, ar_coeffs, ma_coeffs):
+def _fast_residuals(diff_data:NDArray[np.float64], ar_coeffs:list[float], ma_coeffs:list[float]):
     """
-    Computes residuals (nzzz)
+    Computes residuals 
     """
     b = [1.0] + [-i for i in ar_coeffs]
     a = [1.0] + list(ma_coeffs)
@@ -298,19 +287,27 @@ def _fast_residuals(diff_data, ar_coeffs, ma_coeffs):
 
     return np.asarray(residuals)
 
+def _arma_generate(shocks: NDArray[np.float64], ar_coeffs: list[float], ma_coeffs: list[float]):
+    """
+    The inverse of _fast_residuals. Generates y_t given shocks w_t.
+    Solves: (1 - phi*L)y_t = (1 + theta*L)w_t for y_t.
+    """
+    a = [1.0] + [-i for i in ar_coeffs]  
+    b = [1.0] + list(ma_coeffs)          
+    return np.asarray(signal.lfilter(b, a, shocks))
 
-def _frac_diff(series:_TimeSeries, d:int):
+def _frac_diff(time_series:NDArray[np.float64], d:float):
     """
     Fast fractional differencing. Uses fftconvolve to convolute weights and 
     the time series to return the fractionally differenced time series.
     """
     w = [1.0]
-    n = series.length
+    n = len(time_series)
     for i in range(1,n):
         w_i = ((i-1-d) / i)*w[-1]
         w.append(w_i)
 
-    conv_result = signal.fftconvolve(series.values, w, mode="full")
+    conv_result = signal.fftconvolve(time_series, w, mode="full")
 
     return conv_result[:n]
 

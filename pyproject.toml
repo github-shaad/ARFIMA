@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arfima" # This is the pip install name. Check PyPI to ensure it is unique!
-version = "1.0.0"
+version = "1.0.1"
 authors = [
   { name="Shaad Hafeez", email="shaadhafeezofficial@gmail.com" },
 ]
