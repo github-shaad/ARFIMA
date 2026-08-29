@@ -6,7 +6,7 @@ from numpy.typing import NDArray
 
 
 """
-AutoRegressive Fractionally Integrated Moving Average Time Series Library
+AutoRegressive Fractionally Integrated Moving Average Time Series Library.
 """
 
 
@@ -62,7 +62,7 @@ class ARFIMA:
                     * "hqic" : Hannan-Quinn Information Criterion
                     * "aicc" : Corrected AIC 
         """
-        self.in_sample = time_series
+        self.in_sample = np.asarray(time_series,dtype=float)
         best_ic_score = np.inf
         best_params = None
         n = len(time_series)
@@ -253,6 +253,22 @@ class ARFIMA:
         return fitted_values
 
 def _score_function(params:list[float], time_series:NDArray[np.float64], p:int):
+    """
+    Calculates negative log-likelihood for a given set of ARFIMA parameters.
+
+    Parameters
+    ----------
+    params : list[float]
+        The optimization parameters containing $d$, followed by AR and MA coefficients.
+    time_series : NDArray[np.float64]
+        The 1D input time series data.
+    p : int
+        The autoregressive (AR) lag order.
+    Returns
+    -------
+    float
+        The negative log-likelihood value, or scalar (1e10) for invalid variances.
+    """
     n = len(time_series)
     
     d_guess = float(params[0])
@@ -278,8 +294,25 @@ def _score_function(params:list[float], time_series:NDArray[np.float64], p:int):
 
 def _fast_residuals(diff_data:NDArray[np.float64], ar_coeffs:list[float], ma_coeffs:list[float]):
     """
-    Computes residuals 
+    Returns the residuals w_t from differenced data using linear filtering.
+    
+    Solves the ARMA equation (1 - phi)y_t = (1 + theta)w_t for w_t.
+
+    Parameters
+    ----------
+    diff_data : NDArray[np.float64]
+        The fractionally differenced time series ($y_t$).
+    ar_coeffs : list[float]
+        The autoregressive coefficients ($\phi$).
+    ma_coeffs : list[float]
+        The moving average coefficients ($\theta$).
+
+    Returns
+    -------
+    np.ndarray
+        A 1D array of residuals.
     """
+    
     b = [1.0] + [-i for i in ar_coeffs]
     a = [1.0] + list(ma_coeffs)
 
@@ -289,8 +322,23 @@ def _fast_residuals(diff_data:NDArray[np.float64], ar_coeffs:list[float], ma_coe
 
 def _arma_generate(shocks: NDArray[np.float64], ar_coeffs: list[float], ma_coeffs: list[float]):
     """
-    The inverse of _fast_residuals. Generates y_t given shocks w_t.
-    Solves: (1 - phi*L)y_t = (1 + theta*L)w_t for y_t.
+    Generates time series data y_t from given residuals w_t.
+    
+    Acts as the inverse of `_fast_residuals` by solving $(1 - phi)y_t = (1 + theta L)w_t for y_t.
+
+    Parameters
+    ----------
+    shocks : NDArray[np.float64]
+        The array of residuals.
+    ar_coeffs : list[float]
+        The autoregressive coefficients ($\phi$).
+    ma_coeffs : list[float]
+        The moving average coefficients ($\theta$).
+
+    Returns
+    -------
+    np.ndarray
+        A 1D array of generated ARMA values.
     """
     a = [1.0] + [-i for i in ar_coeffs]  
     b = [1.0] + list(ma_coeffs)          
@@ -298,8 +346,19 @@ def _arma_generate(shocks: NDArray[np.float64], ar_coeffs: list[float], ma_coeff
 
 def _frac_diff(time_series:NDArray[np.float64], d:float):
     """
-    Fast fractional differencing. Uses fftconvolve to convolute weights and 
-    the time series to return the fractionally differenced time series.
+    Applies the fractional differencing operator $(1-L)^d$ using Fast Fourier Transform (FFT).
+
+    Parameters
+    ----------
+    time_series : NDArray[np.float64]
+        The 1D time series array to difference.
+    d : float
+        The fractional integration parameter. Pass $-d$ for inverse differencing (integration).
+
+    Returns
+    -------
+    np.ndarray
+        A 1D array of the fractionally differenced time series.
     """
     w = [1.0]
     n = len(time_series)
