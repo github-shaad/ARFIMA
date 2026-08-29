@@ -12,7 +12,7 @@ Where:
 * $L$ is the lag operator.
 * $d$ is the fractional integration parameter ($$-0.5 < d < 0.5$$).
 * $\phi$ and $\theta$ are the Autoregressive (AR) and Moving Average (MA) polynomials.
-* $w_t$ represents the white noise shocks (residuals).
+* $w_t$ represents the white noise.
 
 ## Key Features
 
