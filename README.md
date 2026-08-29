@@ -27,6 +27,8 @@ Where:
 pip install arfima
 ```
 ## Changelog
+* **v1.0.5**: Fix import
+* **v1.0.4**: Fix import
 * **v1.0.3**: Fix import
 * **v1.0.2**: Minor bug fixes and docstring improvements.
 * **v1.0.1**: Fixed inverted AR/MA polynomials in forecast generation.

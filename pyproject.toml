@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arfima" # This is the pip install name. Check PyPI to ensure it is unique!
-version = "1.0.3"
+version = "1.0.5"
 authors = [
   { name="Shaad Hafeez", email="shaadhafeezofficial@gmail.com" },
 ]
@@ -25,5 +25,6 @@ dependencies = [
 [project.urls]
 "Homepage" = "https://github.com/github-shaad/arfima-python"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.setuptools]
+package-dir = {"" = "src"}
+packages = ["arfima"]
