@@ -24,3 +24,6 @@ dependencies = [
 
 [project.urls]
 "Homepage" = "https://github.com/github-shaad/arfima-python"
+
+[tool.setuptools.packages.find]
+where = ["src"]

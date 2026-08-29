@@ -4,11 +4,9 @@ from scipy.optimize import minimize
 import scipy.stats as stats
 from numpy.typing import NDArray
 
-
 """
 AutoRegressive Fractionally Integrated Moving Average Time Series Library.
 """
-
 
 class ARFIMA:
     """
