@@ -1,4 +1,4 @@
-from .core import ARFIMA
+from .core import ARFIMA, FIGARCH
 
-__version__ = "1.0.5"
+__version__ = "1.1.0"
 
