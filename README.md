@@ -41,6 +41,8 @@ Where:
 pip install arfima
 ```
 
+[Click here for the documentation](https://github-shaad.github.io/ARFIMA/)
+
 ## Changelog
 * **v1.1.1**: Added documentation
 ### [1.1.0] - 2026-09-13 :
