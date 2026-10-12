@@ -42,6 +42,7 @@ pip install arfima
 ```
 
 ## Changelog
+* **v1.1.1**: Added documentation
 ### [1.1.0] - 2026-09-13 :
 **Added**
 Added a `FIGARCH` class to model fractionally integrated GARCH processes.

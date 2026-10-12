@@ -9,12 +9,12 @@ AutoRegressive Fractionally Integrated Moving Average Time Series Library.
 """
 
 class ARFIMA:
-    """
-    ARFIMA(p, d, q) Estimator.
+    r"""
+    ARFIMA$(p, d, q)$ Estimator.
     
     Models time series data featuring long-memory processes through fractional 
     integration, where the difference parameter $d$ is non-integer, solving the 
-    general equation $\phi(L)(1-L)^d y_t = \theta(L) w_t$.
+    general equation $\phi(L)(1-L)^dy_t=\theta(L)w_t$ 
     """
     def __init__(self):
         self.p : int = 0
@@ -30,36 +30,34 @@ class ARFIMA:
 
     def fit(self, time_series:NDArray[np.float64], p_list:list[int], q_list:list[int], method:str="L-BFGS-B",
             criterion:str='aic', returns=True):
-        """        
-        Fits the optimal ARFIMA structure using Maximum Likelihood Estimation (MLE) via a grid search.
-                
-                Evaluates combinations of AR and MA lags to minimize the selected information criterion. 
-                Upon convergence, calculates the inverse Hessian matrix to derive standard errors, 
-                t-statistics, and p-values for statistical inference.
+        r"""
+            Evaluates combinations of AR and MA lags to minimize the selected information criterion. 
+            Upon convergence, calculates the inverse Hessian matrix to derive standard errors, 
+            t-statistics, and p-values for statistical inference.
 
-                Parameters
-                ----------
-                time_series : NDArray
-                    The 1D time series data object to fit.
-                p_list : list[int]
-                    A list of autoregressive (AR) lag orders to test (e.g., [0, 1, 2]).
-                q_list : list[int]
-                    A list of moving average (MA) lag orders to test (e.g., [0, 1]).
-                method : str, default="L-BFGS-B"
-                    The SciPy optimization algorithm to use. 
-                    Options:
-                    * "L-BFGS-B" (Default, highly recommended for bounded parameters)
-                    * "TNC"
-                    * "SLSQP"
-                    * "Powell"
-                criterion : str, default='aic'
-                    The information criterion used to penalize model complexity.
-                    Options:
-                    * "aic"  : Akaike Information Criterion
-                    * "bic"  : Bayesian Information Criterion
-                    * "hqic" : Hannan-Quinn Information Criterion
-                    * "aicc" : Corrected AIC 
-        """
+            Parameters
+            ----------
+            time_series : NDArray
+                The 1D time series data object to fit.
+            p_list : list[int]
+                A list of autoregressive (AR) lag orders to test (e.g., [0, 1, 2]).
+            q_list : list[int]
+                A list of moving average (MA) lag orders to test (e.g., [0, 1]).
+            method : str, default="L-BFGS-B"
+                The SciPy optimization algorithm to use. Options:
+                
+                * "L-BFGS-B" (Default, highly recommended for bounded parameters)
+                * "TNC"
+                * "SLSQP"
+                * "Powell"
+            criterion : str, default="aic"
+                The information criterion used to penalize model complexity. Options:
+                
+                * "aic" : Akaike Information Criterion
+                * "bic" : Bayesian Information Criterion
+                * "hqic" : Hannan-Quinn Information Criterion
+                * "aicc" : Corrected AIC
+            """
         self.in_sample = np.asarray(time_series,dtype=float)
         best_ic_score = np.inf
         best_params = None
@@ -269,20 +267,32 @@ class FIGARCH:
         self.is_fitted = False
 
     def fit(self, squared_residuals: NDArray[np.float64], p_list: list[int], q_list: list[int], method: str="L-BFGS-B", 
-            criterion:str='aic', returns=True):
-        """
+            criterion:str='aic'):
+        r"""
         Fits the optimal FIGARCH structure using Maximum Likelihood Estimation.
         
         Parameters
         ----------
         squared_residuals : NDArray[np.float64]
-            The squared white noise shocks (\epsilon_t^2) extracted from the mean equation.
+            The squared white noise shocks ($\epsilon_t^2$) extracted from the mean equation.
         p_list : list[int]
             List of ARCH lag orders to test.
         q_list : list[int]
             List of GARCH lag orders to test.
         method : str, default="L-BFGS-B"
-            The bounded optimization algorithm to use.
+            The SciPy optimization algorithm to use. Options:
+            
+            * "L-BFGS-B" (Default, highly recommended for bounded parameters)
+            * "TNC"
+            * "SLSQP"
+            * "Powell"
+        criterion : str, default="aic"
+            The information criterion used to penalize model complexity. Options:
+            
+            * "aic" : Akaike Information Criterion
+            * "bic" : Bayesian Information Criterion
+            * "hqic" : Hannan-Quinn Information Criterion
+            * "aicc" : Corrected AIC
         """
         self.in_sample_variance = np.asarray(squared_residuals, dtype=float)
         best_params = None
@@ -362,7 +372,7 @@ class FIGARCH:
             
         return self
     def summary(self, returns:bool=True):
-        """
+        r"""
         Prints a formatted statistical regression table for the fitted FIGARCH model.
         
         Outputs the estimated parameters (baseline variance $\omega$, fractional 
@@ -407,11 +417,11 @@ class FIGARCH:
             return self
         
     def predict_in_sample(self):
-        """
+        r"""
         Generates in-sample conditional variances for the historical data.
         
         Reconstructs the model's historical volatility fit by calculating the 
-        ARCH(\infty) decay weights and convoluting them with the actual 
+        ARCH($\infty$) decay weights and convoluting them with the actual 
         historical squared shocks.
 
         Returns
@@ -443,7 +453,7 @@ class FIGARCH:
         return conditional_variance
 
     def predict(self, steps: int = 0):
-        """
+        r"""
         Forecasts future conditional variance out-of-sample.
         
         Mathematically projects volatility forward iteratively. Because future 
@@ -510,7 +520,7 @@ def _score_function(params:list[float], time_series:NDArray[np.float64], p:int):
     Returns
     -------
     float
-        The negative log-likelihood value, or scalar (1e10) for invalid variances.
+        The negative log-likelihood value, or scalar ($1^{10}$) for invalid variances.
     """
     n = len(time_series)
     
@@ -536,10 +546,10 @@ def _score_function(params:list[float], time_series:NDArray[np.float64], p:int):
     return neg_ll
 
 def _fast_residuals(diff_data:NDArray[np.float64], ar_coeffs:list[float], ma_coeffs:list[float]):
-    """
-    Returns the residuals w_t from differenced data using linear filtering.
+    r"""
+    Returns the residuals $w_t$ from differenced data using linear filtering.
     
-    Solves the ARMA equation (1 - phi)y_t = (1 + theta)w_t for w_t.
+    Solves the ARMA equation $(1 - \phi)y_t = (1 + \theta)w_t$ for $w_t$.
 
     Parameters
     ----------
@@ -564,10 +574,10 @@ def _fast_residuals(diff_data:NDArray[np.float64], ar_coeffs:list[float], ma_coe
     return np.asarray(residuals)
 
 def _arma_generate(shocks: NDArray[np.float64], ar_coeffs: list[float], ma_coeffs: list[float]):
-    """
-    Generates time series data y_t from given residuals w_t.
+    r"""
+    Generates time series data $y_t$ from given residuals $w_t$.
     
-    Acts as the inverse of `_fast_residuals` by solving $(1 - phi)y_t = (1 + theta L)w_t for y_t.
+    Acts as the inverse of `_fast_residuals` by solving $(1 - \phi)y_t = (1 + \theta L)w_t$ for $y_t$.
 
     Parameters
     ----------
@@ -652,17 +662,17 @@ def _gph_estimator(time_series:NDArray[np.float64] | np.ndarray, bandwidth_power
 
 
 def _figarch_weights(d_v: float, arch_coeffs: list[float], garch_coeffs: list[float], n: int):
-    """
+    r"""
     Computes the ARCH(infinity) representation weights for the FIGARCH process.
     
-    Expands the fractional differencing polynomial (1-L)^d_v up to lag n 
+    Expands the fractional differencing polynomial $(1-L)^d_v$ up to lag n 
     and filters it through the ARCH and GARCH polynomials to derive the 
-    decay weights lambda_i for the conditional variance equation:
-    lambda(L) = 1 - [phi(L) / beta(L)] * (1-L)^d_v.
+    decay weights $\lambda_i$ for the conditional variance equation:
+    $\lambda(L) = 1 - [\phi(L) / \beta(L)] * (1-L)^{d_v}$.
 
     Parameters
     ----------
-    d_v : float
+    $d_v$ : float
         The fractional integration parameter for volatility.
     arch_coeffs : list[float]
         The autoregressive conditional heteroskedasticity (ARCH) coefficients.
@@ -674,7 +684,7 @@ def _figarch_weights(d_v: float, arch_coeffs: list[float], garch_coeffs: list[fl
     Returns
     -------
     np.ndarray
-        A 1D array of length n containing the ARCH(infinity) decay weights.
+        A 1D array of length n containing the ARCH($\infty$) decay weights.
     """
     frac_weights = np.zeros(n)
     frac_weights[0] = 1.0
@@ -694,9 +704,9 @@ def _figarch_weights(d_v: float, arch_coeffs: list[float], garch_coeffs: list[fl
 
 def _dynamic_variance(squared_shocks: NDArray[np.float64], omega: float, weights: NDArray[np.float64]):
     """
-    Calculates the conditional variance array (sigma_t^2) using FFT convolution.
+    Calculates the conditional variance array ($\sigma_t^2$) using FFT convolution.
     
-    Applies the pre-calculated ARCH(infinity) decay weights to the historical 
+    Applies the pre-calculated ARCH($\infty$) decay weights to the historical 
     squared shocks via Fast Fourier Transform convolution to efficiently construct 
     the dynamic variance path. Applies a strict mathematical floor to prevent 
     variance from dropping below zero.
@@ -704,16 +714,16 @@ def _dynamic_variance(squared_shocks: NDArray[np.float64], omega: float, weights
     Parameters
     ----------
     squared_shocks : NDArray[np.float64]
-        The array of squared residuals (epsilon_t^2) extracted from the mean equation.
+        The array of squared residuals ($\epsilon_t^2$) extracted from the mean equation.
     omega : float
-        The adjusted baseline variance constant (omega^*).
+        The adjusted baseline variance constant ($\omega^*$).
     weights : NDArray[np.float64]
-        The array of ARCH(infinity) decay weights.
+        The array of ARCH($\infty$) decay weights.
 
     Returns
     -------
     np.ndarray
-        A 1D array of conditional variances (sigma_t^2) equal in length to the input shocks.
+        A 1D array of conditional variances ($\sigma_t^2$) equal in length to the input shocks.
     """
     n = len(squared_shocks)
     
@@ -728,18 +738,18 @@ def _figarch_score_function(params: list[float], squared_shocks: NDArray[np.floa
     Evaluates the Gaussian negative log-likelihood for dynamic volatility.
     
     Extracts the FIGARCH parameters, constructs the conditional variance path 
-    (sigma_t^2), and calculates the likelihood score used by the optimizer. 
+    ($\sigma_t^2$), and calculates the likelihood score used by the optimizer. 
     Implements strict penalty boundaries to reject non-stationary GARCH 
     parameter combinations or invalid variance arrays.
     
-    Solves: -ln L = 0.5 * sum[ ln(sigma_t^2) + (epsilon_t^2 / sigma_t^2) ]
+    Solves: $-\ln(L) = 0.5 * \sum[ ln(\sigma_t^2) + (\epsilon_t^2 / \sigma_t^2)]$
 
     Parameters
     ----------
     params : list[float]
-        The optimization parameters containing omega, d_v, followed by ARCH and GARCH coefficients.
+        The optimization parameters containing omega, $d_v$, followed by ARCH and GARCH coefficients.
     squared_shocks : NDArray[np.float64]
-        The 1D array of squared residuals (epsilon_t^2).
+        The 1D array of squared residuals ($\epsilon_t^2$).
     p : int
         The ARCH lag order.
     q : int
@@ -748,7 +758,7 @@ def _figarch_score_function(params: list[float], squared_shocks: NDArray[np.floa
     Returns
     -------
     float
-        The negative log-likelihood scalar, or a penalty value (1e10) if bounds are violated.
+        The negative log-likelihood scalar, or a penalty value ($1^{10}$) if bounds are violated.
     """
     omega = float(params[0])
     d_v = float(params[1])
